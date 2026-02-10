@@ -5,6 +5,7 @@ return [
         fn (string $email): string => trim($email),
         explode(',', (string) env('ADMIN_EMAILS', ''))
     ))),
+    'post_login_redirect_route' => env('AUTHX_POST_LOGIN_REDIRECT_ROUTE', 'dashboard'),
 
     'authx' => [
         'client_id' => env('AUTHX_CLIENT_ID'),

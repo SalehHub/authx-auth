@@ -65,7 +65,9 @@ class AuthxAuthController
         Auth::guard('web')->login($user, remember: true);
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard'));
+        $postLoginRedirectRoute = (string) config('authx-auth.post_login_redirect_route', 'dashboard');
+
+        return redirect()->intended(route($postLoginRedirectRoute));
     }
 
     /**
