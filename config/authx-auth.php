@@ -5,6 +5,7 @@ return [
         fn (string $email): string => trim($email),
         explode(',', (string) env('ADMIN_EMAILS', ''))
     ))),
+    'prevent_non_admin_user_creation' => env('AUTHX_PREVENT_NON_ADMIN_USER_CREATION', false),
     'post_login_redirect_route' => env('AUTHX_POST_LOGIN_REDIRECT_ROUTE', 'dashboard'),
 
     'authx' => [

@@ -2,6 +2,7 @@
 
 namespace AuthxAuth\Http\Controllers;
 
+use AuthxAuth\AdminEmailAllowlist;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -11,6 +12,10 @@ use Laravel\Socialite\Facades\Socialite;
 
 class AuthxAuthController
 {
+    public function __construct(
+        protected AdminEmailAllowlist $adminEmailAllowlist,
+    ) {}
+
     /**
      * Redirect the user to AuthX.
      */
@@ -36,6 +41,14 @@ class AuthxAuthController
         $name = $authxUser->getName();
         $id = $authxUser->getId();
         $avatar = $authxUser->getAvatar();
+        $preventNonAdminUserCreation = filter_var(
+            config('authx-auth.prevent_non_admin_user_creation', false),
+            FILTER_VALIDATE_BOOL
+        );
+
+        if ($preventNonAdminUserCreation && ! $this->adminEmailAllowlist->allows($email)) {
+            abort(403, 'Only admin users can access this application.');
+        }
 
         $userModelClass = (string) config('auth.providers.users.model');
 

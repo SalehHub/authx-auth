@@ -39,6 +39,7 @@ AUTHX_REDIRECT_URI="${APP_URL}/auth/callback"
 AUTHX_URL=http://localhost:8000
 AUTHX_VERIFY_SSL=true
 AUTHX_POST_LOGIN_REDIRECT_ROUTE=dashboard
+AUTHX_PREVENT_NON_ADMIN_USER_CREATION=false
 
 # Comma-separated admin allowlist
 ADMIN_EMAILS=admin@example.com,owner@example.com
@@ -105,6 +106,8 @@ When a signed-in user is not in `ADMIN_EMAILS`, the `admin` middleware:
 - logs out the user
 - invalidates the session
 - returns HTTP `403` with message: `Only admin users can access this application.`
+
+If you set `AUTHX_PREVENT_NON_ADMIN_USER_CREATION=true`, non-admin users are rejected during OAuth callback before any `users` table write happens.
 
 ## License
 
