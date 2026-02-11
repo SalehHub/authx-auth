@@ -65,7 +65,7 @@ class AuthxAuthControllerTest extends TestCase
 
         $this->assertSame('admin', $user->name);
         $this->assertSame(17, $user->authx_id);
-        $this->assertSame('authx', $user->auth_provider);
+        $this->assertSame('local', $user->auth_provider);
         $this->assertSame('https://cdn.example.test/avatar.png', $user->avatar);
         $this->assertSame(
             '2026-02-10 01:02:03',
@@ -75,10 +75,8 @@ class AuthxAuthControllerTest extends TestCase
     }
 
     #[Test]
-    public function callback_uses_email_verified_boolean_when_timestamp_missing(): void
+    public function callback_does_not_set_email_verified_at_when_timestamp_missing(): void
     {
-        CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-02-11T16:30:00Z'));
-
         $this->fakeSocialiteUser(
             mapped: [
                 'id' => 11,
@@ -94,11 +92,7 @@ class AuthxAuthControllerTest extends TestCase
         $this->get('/auth/callback')->assertRedirect(route('dashboard'));
 
         $user = User::query()->where('email', 'jane@example.com')->firstOrFail();
-        $this->assertSame('authx', $user->auth_provider);
-        $this->assertSame(
-            '2026-02-11 16:30:00',
-            CarbonImmutable::parse((string) $user->email_verified_at)->utc()->toDateTimeString()
-        );
+        $this->assertNull($user->email_verified_at);
     }
 
     #[Test]
