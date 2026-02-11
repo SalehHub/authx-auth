@@ -80,6 +80,7 @@ It always sets:
 It conditionally sets these fields only if the user table has matching columns:
 - `authx_id`
 - `avatar`
+- `email_verified_at` (from AuthX `/api/user.email_verified_at`; invalid/missing value is stored as `null`)
 
 If you want these values persisted, add nullable columns:
 

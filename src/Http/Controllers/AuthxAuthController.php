@@ -3,6 +3,7 @@
 namespace AuthxAuth\Http\Controllers;
 
 use AuthxAuth\AdminEmailAllowlist;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -33,6 +34,7 @@ class AuthxAuthController
     public function callback(Request $request): RedirectResponse
     {
         $authxUser = Socialite::driver('authx')->user();
+        $rawUser = is_array($authxUser->user ?? null) ? $authxUser->user : [];
 
         $email = $authxUser->getEmail();
 
@@ -67,6 +69,19 @@ class AuthxAuthController
 
         if (Schema::hasColumn($table, 'avatar')) {
             $attributes['avatar'] = is_string($avatar) ? $avatar : '';
+        }
+
+        if (Schema::hasColumn($table, 'email_verified_at')) {
+            $authxEmailVerifiedAt = $rawUser['email_verified_at'] ?? null;
+            $attributes['email_verified_at'] = null;
+
+            if (is_string($authxEmailVerifiedAt) && trim($authxEmailVerifiedAt) !== '') {
+                try {
+                    $attributes['email_verified_at'] = CarbonImmutable::parse($authxEmailVerifiedAt);
+                } catch (\Throwable) {
+                    $attributes['email_verified_at'] = null;
+                }
+            }
         }
 
         /** @var Model $user */
