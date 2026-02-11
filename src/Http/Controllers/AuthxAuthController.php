@@ -58,29 +58,35 @@ class AuthxAuthController
         $table = (new $userModelClass)->getTable();
         $columns = Schema::getColumnListing($table);
 
+        /** @var Model|null $existingUser */
+        $existingUser = $userModelClass::query()->where('email', $email)->first();
+        $isNewUser = $existingUser === null;
 
         $attributes = [];
+
         if (in_array('authx_id', $columns, true) && filled($id)) {
-            $attributes['authx_id'] =  $id;
+            $attributes['authx_id'] = $id;
         }
 
-        if (in_array('name', $columns, true) ) {
-            $attributes['name'] =  filled($name) ? $name : Str::before($email, '@');
-        }
+        if ($isNewUser) {
+            if (in_array('name', $columns, true)) {
+                $attributes['name'] = filled($name) ? $name : Str::before($email, '@');
+            }
 
-        if (in_array('nickname', $columns, true) && filled($nickname)) {
-            $attributes['nickname'] =  $nickname;
-        }
+            if (in_array('nickname', $columns, true) && filled($nickname)) {
+                $attributes['nickname'] = $nickname;
+            }
 
-        if (in_array('avatar', $columns, true) && filled($avatar)) {
-            $attributes['avatar'] = $avatar;
+            if (in_array('avatar', $columns, true) && filled($avatar)) {
+                $attributes['avatar'] = $avatar;
+            }
         }
 
         if (in_array('email_verified_at', $columns, true) && filled($emailVerifiedAt)) {
             $attributes['email_verified_at'] = CarbonImmutable::parse($emailVerifiedAt);
         }
 
-        if (in_array('auth_provider', $columns, true) && filled($authProvider) ) {
+        if (in_array('auth_provider', $columns, true) && filled($authProvider)) {
             $attributes['auth_provider'] = $authProvider;
 
             $providerIdColumn = $authProvider.'_id';
@@ -90,11 +96,6 @@ class AuthxAuthController
                 $attributes[$providerIdColumn] = $providerIdValue;
             }
         }
-
-
-        /** @var Model|null $existingUser */
-        $existingUser = $userModelClass::query()->where('email', $email)->first();
-
 
         /** @var Model $user */
         $user = $existingUser ?? new $userModelClass;

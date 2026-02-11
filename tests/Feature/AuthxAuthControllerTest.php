@@ -312,20 +312,22 @@ class AuthxAuthControllerTest extends TestCase
     }
 
     #[Test]
-    public function callback_updates_existing_user(): void
+    public function callback_preserves_existing_user_profile_fields(): void
     {
         User::query()->create([
-            'name' => 'Old Name',
+            'name' => 'Custom Name',
+            'nickname' => 'customnick',
             'email' => 'existing@example.com',
-            'avatar' => 'https://old-avatar.test/img.png',
+            'avatar' => 'https://custom-avatar.test/img.png',
         ]);
 
         $this->fakeSocialiteUser(
             mapped: [
                 'id' => 10,
-                'name' => 'New Name',
+                'name' => 'AuthX Name',
+                'nickname' => 'authxnick',
                 'email' => 'existing@example.com',
-                'avatar' => 'https://new-avatar.test/img.png',
+                'avatar' => 'https://authx-avatar.test/img.png',
             ],
             raw: [],
         );
@@ -335,8 +337,34 @@ class AuthxAuthControllerTest extends TestCase
         $this->assertSame(1, User::query()->where('email', 'existing@example.com')->count());
 
         $user = User::query()->where('email', 'existing@example.com')->firstOrFail();
-        $this->assertSame('New Name', $user->name);
-        $this->assertSame('https://new-avatar.test/img.png', $user->avatar);
+        $this->assertSame('Custom Name', $user->name);
+        $this->assertSame('customnick', $user->nickname);
+        $this->assertSame('https://custom-avatar.test/img.png', $user->avatar);
+    }
+
+    #[Test]
+    public function callback_still_updates_authx_id_on_existing_user(): void
+    {
+        User::query()->create([
+            'name' => 'Existing',
+            'email' => 'existing@example.com',
+            'authx_id' => null,
+        ]);
+
+        $this->fakeSocialiteUser(
+            mapped: [
+                'id' => 42,
+                'name' => 'AuthX Name',
+                'email' => 'existing@example.com',
+                'avatar' => null,
+            ],
+            raw: [],
+        );
+
+        $this->get('/auth/callback')->assertRedirect(route('dashboard'));
+
+        $user = User::query()->where('email', 'existing@example.com')->firstOrFail();
+        $this->assertSame(42, $user->authx_id);
     }
 
     #[Test]
