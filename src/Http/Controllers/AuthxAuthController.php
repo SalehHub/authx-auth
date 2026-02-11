@@ -8,10 +8,12 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 use Throwable;
 
 class AuthxAuthController
@@ -24,12 +26,12 @@ class AuthxAuthController
     /**
      * Redirect the user to AuthX.
      */
-    public function redirect(): RedirectResponse
+    public function redirect(Request $request): SymfonyResponse
     {
         /** @var RedirectResponse $response */
         $response = Socialite::driver('authx')->redirect();
 
-        return $response;
+        return $this->externalRedirect($request, $response->getTargetUrl());
     }
 
     /**
@@ -111,7 +113,7 @@ class AuthxAuthController
     /**
      * Log the user out of local session and optionally AuthX.
      */
-    public function logout(Request $request): RedirectResponse
+    public function logout(Request $request): SymfonyResponse
     {
         Auth::guard('web')->logout();
 
@@ -122,7 +124,17 @@ class AuthxAuthController
             return redirect('/');
         }
 
-        return redirect()->away($this->config->authxLogoutUrl());
+        return $this->externalRedirect($request, $this->config->authxLogoutUrl());
+    }
+
+    private function externalRedirect(Request $request, string $url): SymfonyResponse
+    {
+        if ($request->headers->has('X-Inertia')) {
+            return response('', Response::HTTP_CONFLICT)
+                ->header('X-Inertia-Location', $url);
+        }
+
+        return redirect()->away($url);
     }
 
 }

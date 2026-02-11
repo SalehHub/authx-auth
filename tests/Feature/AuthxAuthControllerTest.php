@@ -42,6 +42,19 @@ class AuthxAuthControllerTest extends TestCase
     }
 
     #[Test]
+    public function auth_redirect_route_returns_inertia_external_redirect_response(): void
+    {
+        $provider = Mockery::mock();
+        $provider->shouldReceive('redirect')->once()->andReturn(redirect('https://authx.example.test/oauth/authorize'));
+        Socialite::shouldReceive('driver')->once()->with('authx')->andReturn($provider);
+
+        $response = $this->withHeader('X-Inertia', 'true')->get('/auth/redirect');
+
+        $response->assertStatus(409);
+        $response->assertHeader('X-Inertia-Location', 'https://authx.example.test/oauth/authorize');
+    }
+
+    #[Test]
     public function callback_creates_or_updates_user_from_authx_payload(): void
     {
         CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-02-11T12:00:00Z'));
@@ -222,6 +235,23 @@ class AuthxAuthControllerTest extends TestCase
         $response = $this->actingAs($user)->post('/logout');
 
         $response->assertRedirect('/');
+        $this->assertGuest();
+    }
+
+    #[Test]
+    public function logout_route_returns_inertia_external_redirect_response(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Logout User',
+            'email' => 'logout@example.com',
+        ]);
+
+        $response = $this->withHeader('X-Inertia', 'true')
+            ->actingAs($user)
+            ->post('/logout');
+
+        $response->assertStatus(409);
+        $response->assertHeader('X-Inertia-Location', 'https://authx.example.test/logout');
         $this->assertGuest();
     }
 
