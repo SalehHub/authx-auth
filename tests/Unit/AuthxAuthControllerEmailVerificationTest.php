@@ -87,30 +87,6 @@ class AuthxAuthControllerEmailVerificationTest extends TestCase
     }
 
     #[Test]
-    public function it_inferrs_google_auth_provider_from_google_id(): void
-    {
-        $controller = new TestableAuthxAuthController(new AdminEmailAllowlist(new AuthxAuthConfig), new AuthxAuthConfig);
-
-        $provider = $controller->exposedResolveAuthProvider([
-            'google_id' => 'google-55',
-        ]);
-
-        $this->assertSame('google', $provider);
-    }
-
-    #[Test]
-    public function it_inferrs_google_auth_provider_from_existing_user_google_id(): void
-    {
-        $controller = new TestableAuthxAuthController(new AdminEmailAllowlist(new AuthxAuthConfig), new AuthxAuthConfig);
-        $existingUser = new UserWithAttributes;
-        $existingUser->setAttribute('google_id', 'google-77');
-
-        $provider = $controller->exposedResolveAuthProvider([], $existingUser);
-
-        $this->assertSame('google', $provider);
-    }
-
-    #[Test]
     public function it_defaults_auth_provider_to_authx(): void
     {
         $controller = new TestableAuthxAuthController(new AdminEmailAllowlist(new AuthxAuthConfig), new AuthxAuthConfig);
@@ -118,6 +94,58 @@ class AuthxAuthControllerEmailVerificationTest extends TestCase
         $provider = $controller->exposedResolveAuthProvider([]);
 
         $this->assertSame('authx', $provider);
+    }
+
+    #[Test]
+    public function it_resolves_provider_id_from_raw_payload(): void
+    {
+        $controller = new TestableAuthxAuthController(new AdminEmailAllowlist(new AuthxAuthConfig), new AuthxAuthConfig);
+
+        $id = $controller->exposedResolveProviderId('google_id', null, ['google_id' => 'google-55']);
+
+        $this->assertSame('google-55', $id);
+    }
+
+    #[Test]
+    public function it_resolves_numeric_provider_id_from_raw_payload(): void
+    {
+        $controller = new TestableAuthxAuthController(new AdminEmailAllowlist(new AuthxAuthConfig), new AuthxAuthConfig);
+
+        $id = $controller->exposedResolveProviderId('authx_id', null, ['authx_id' => '17']);
+
+        $this->assertSame(17, $id);
+    }
+
+    #[Test]
+    public function it_falls_back_to_socialite_id_when_raw_payload_is_empty(): void
+    {
+        $controller = new TestableAuthxAuthController(new AdminEmailAllowlist(new AuthxAuthConfig), new AuthxAuthConfig);
+
+        $id = $controller->exposedResolveProviderId('authx_id', '33', []);
+
+        $this->assertSame(33, $id);
+    }
+
+    #[Test]
+    public function it_falls_back_to_existing_user_provider_id(): void
+    {
+        $controller = new TestableAuthxAuthController(new AdminEmailAllowlist(new AuthxAuthConfig), new AuthxAuthConfig);
+        $existingUser = new UserWithAttributes;
+        $existingUser->setAttribute('google_id', 'google-77');
+
+        $id = $controller->exposedResolveProviderId('google_id', null, [], $existingUser);
+
+        $this->assertSame('google-77', $id);
+    }
+
+    #[Test]
+    public function it_returns_null_when_no_provider_id_found(): void
+    {
+        $controller = new TestableAuthxAuthController(new AdminEmailAllowlist(new AuthxAuthConfig), new AuthxAuthConfig);
+
+        $id = $controller->exposedResolveProviderId('google_id', null, []);
+
+        $this->assertNull($id);
     }
 }
 
@@ -137,6 +165,14 @@ class TestableAuthxAuthController extends AuthxAuthController
     public function exposedResolveAuthProvider(array $rawUser, ?Model $existingUser = null): string
     {
         return $this->resolveAuthProvider($rawUser, $existingUser);
+    }
+
+    /**
+     * @param  array<string, mixed>  $rawUser
+     */
+    public function exposedResolveProviderId(string $column, mixed $socialiteId, array $rawUser, ?Model $existingUser = null): string|int|null
+    {
+        return $this->resolveProviderId($column, $socialiteId, $rawUser, $existingUser);
     }
 }
 

@@ -115,6 +115,7 @@ class AuthxAuthControllerTest extends TestCase
             ],
             raw: [
                 'email_verified_at' => '2026-02-10T08:00:00Z',
+                'auth_provider' => 'google',
                 'google_id' => 'google-123',
             ],
         );
@@ -122,8 +123,8 @@ class AuthxAuthControllerTest extends TestCase
         $this->get('/auth/callback')->assertRedirect(route('dashboard'));
 
         $user = RestrictedUser::query()->where('email', 'restricted@example.com')->firstOrFail();
-        $this->assertSame(33, $user->authx_id);
         $this->assertSame('google', $user->auth_provider);
+        $this->assertSame('google-123', $user->google_id);
         $this->assertSame(
             '2026-02-10 08:00:00',
             CarbonImmutable::parse((string) $user->email_verified_at)->utc()->toDateTimeString()
