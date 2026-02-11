@@ -5,7 +5,7 @@ Reusable AuthX authentication package for Laravel apps.
 It provides:
 - a custom Socialite driver (`authx`)
 - built-in auth routes and controller actions (login/register/forgot-password redirect to AuthX)
-- local session logout route
+- logout route that clears local session and logs out from AuthX
 - admin-email allowlist middleware alias (`admin`)
 
 ## Requirements
@@ -37,6 +37,8 @@ AUTHX_CLIENT_ID=your-client-id
 AUTHX_CLIENT_SECRET=your-client-secret
 AUTHX_REDIRECT_URI="${APP_URL}/auth/callback"
 AUTHX_URL=http://localhost:8000
+AUTHX_LOGOUT_FROM_AUTHX=true
+AUTHX_LOGOUT_URL=
 AUTHX_VERIFY_SSL=true
 AUTHX_POST_LOGIN_REDIRECT_ROUTE=dashboard
 AUTHX_PREVENT_NON_ADMIN_USER_CREATION=false
@@ -56,7 +58,7 @@ The package loads these web routes:
 - `GET /forgot-password` -> redirects to `auth.redirect`
 - `GET /auth/redirect` -> starts AuthX OAuth flow
 - `GET /auth/callback` -> handles OAuth callback, logs in/upserts user
-- `POST /logout` -> logs user out of local Laravel session
+- `POST /logout` -> logs user out locally and optionally redirects to AuthX logout URL
 
 ### Middleware Alias
 
@@ -103,6 +105,9 @@ redirect()->intended(route(config('authx-auth.post_login_redirect_route', 'dashb
 ```
 
 Default route name is `dashboard`. You can override it with `AUTHX_POST_LOGIN_REDIRECT_ROUTE`.
+
+Logout redirects to AuthX only when `AUTHX_LOGOUT_FROM_AUTHX=true`.
+When enabled, it uses `AUTHX_LOGOUT_URL` if set, otherwise falls back to `${AUTHX_URL}/logout`.
 
 ## Admin Allowlist Behavior
 

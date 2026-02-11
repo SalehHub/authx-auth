@@ -109,7 +109,7 @@ class AuthxAuthController
     }
 
     /**
-     * Log the user out of the local application session.
+     * Log the user out of local session and optionally AuthX.
      */
     public function logout(Request $request): RedirectResponse
     {
@@ -118,7 +118,11 @@ class AuthxAuthController
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        if (! $this->config->logoutFromAuthx()) {
+            return redirect('/');
+        }
+
+        return redirect()->away($this->config->authxLogoutUrl());
     }
 
 }
