@@ -10,4 +10,11 @@
             <directory>tests</directory>
         </testsuite>
     </testsuites>
+    <source>
+        <include>
+            <directory suffix=".php">src</directory>
+            <directory suffix=".php">routes</directory>
+            <file>config/authx-auth.php</file>
+        </include>
+    </source>
 </phpunit>
