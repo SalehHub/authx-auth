@@ -21,6 +21,16 @@ class AdminEmailAllowlistTest extends TestCase
     }
 
     #[Test]
+    public function it_rejects_non_admin_email(): void
+    {
+        config()->set('authx-auth.admin_emails', ['admin@example.com']);
+
+        $allowlist = new AdminEmailAllowlist(new AuthxAuthConfig);
+
+        $this->assertFalse($allowlist->allows('user@example.com'));
+    }
+
+    #[Test]
     public function it_returns_empty_list_for_invalid_config_type(): void
     {
         config()->set('authx-auth.admin_emails', 'admin@example.com');

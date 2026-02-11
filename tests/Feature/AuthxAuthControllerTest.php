@@ -193,6 +193,172 @@ class AuthxAuthControllerTest extends TestCase
         $this->assertGuest();
     }
 
+    #[Test]
+    public function callback_sets_name_from_payload_when_provided(): void
+    {
+        $this->fakeSocialiteUser(
+            mapped: [
+                'id' => 5,
+                'name' => 'Taylor Otwell',
+                'email' => 'taylor@example.com',
+                'avatar' => null,
+            ],
+            raw: [],
+        );
+
+        $this->get('/auth/callback')->assertRedirect(route('dashboard'));
+
+        $user = User::query()->where('email', 'taylor@example.com')->firstOrFail();
+        $this->assertSame('Taylor Otwell', $user->name);
+    }
+
+    #[Test]
+    public function callback_sets_nickname_when_provided(): void
+    {
+        $this->fakeSocialiteUser(
+            mapped: [
+                'id' => 6,
+                'nickname' => 'taylorotwell',
+                'name' => 'Taylor',
+                'email' => 'taylor@example.com',
+                'avatar' => null,
+            ],
+            raw: [],
+        );
+
+        $this->get('/auth/callback')->assertRedirect(route('dashboard'));
+
+        $user = User::query()->where('email', 'taylor@example.com')->firstOrFail();
+        $this->assertSame('taylorotwell', $user->nickname);
+    }
+
+    #[Test]
+    public function callback_does_not_set_nickname_when_blank(): void
+    {
+        $this->fakeSocialiteUser(
+            mapped: [
+                'id' => 7,
+                'nickname' => null,
+                'name' => 'Jane',
+                'email' => 'jane@example.com',
+                'avatar' => null,
+            ],
+            raw: [],
+        );
+
+        $this->get('/auth/callback')->assertRedirect(route('dashboard'));
+
+        $user = User::query()->where('email', 'jane@example.com')->firstOrFail();
+        $this->assertNull($user->nickname);
+    }
+
+    #[Test]
+    public function callback_does_not_set_avatar_when_blank(): void
+    {
+        $this->fakeSocialiteUser(
+            mapped: [
+                'id' => 8,
+                'name' => 'No Avatar',
+                'email' => 'noavatar@example.com',
+                'avatar' => null,
+            ],
+            raw: [],
+        );
+
+        $this->get('/auth/callback')->assertRedirect(route('dashboard'));
+
+        $user = User::query()->where('email', 'noavatar@example.com')->firstOrFail();
+        $this->assertNull($user->avatar);
+    }
+
+    #[Test]
+    public function callback_does_not_set_authx_id_when_blank(): void
+    {
+        $this->fakeSocialiteUser(
+            mapped: [
+                'id' => null,
+                'name' => 'No ID',
+                'email' => 'noid@example.com',
+                'avatar' => null,
+            ],
+            raw: [],
+        );
+
+        $this->get('/auth/callback')->assertRedirect(route('dashboard'));
+
+        $user = User::query()->where('email', 'noid@example.com')->firstOrFail();
+        $this->assertNull($user->authx_id);
+    }
+
+    #[Test]
+    public function callback_sets_auth_provider_without_provider_id_column(): void
+    {
+        $this->fakeSocialiteUser(
+            mapped: [
+                'id' => 9,
+                'name' => 'GitHub User',
+                'email' => 'github@example.com',
+                'avatar' => null,
+            ],
+            raw: [
+                'auth_provider' => 'github',
+            ],
+        );
+
+        $this->get('/auth/callback')->assertRedirect(route('dashboard'));
+
+        $user = User::query()->where('email', 'github@example.com')->firstOrFail();
+        $this->assertSame('github', $user->auth_provider);
+    }
+
+    #[Test]
+    public function callback_updates_existing_user(): void
+    {
+        User::query()->create([
+            'name' => 'Old Name',
+            'email' => 'existing@example.com',
+            'avatar' => 'https://old-avatar.test/img.png',
+        ]);
+
+        $this->fakeSocialiteUser(
+            mapped: [
+                'id' => 10,
+                'name' => 'New Name',
+                'email' => 'existing@example.com',
+                'avatar' => 'https://new-avatar.test/img.png',
+            ],
+            raw: [],
+        );
+
+        $this->get('/auth/callback')->assertRedirect(route('dashboard'));
+
+        $this->assertSame(1, User::query()->where('email', 'existing@example.com')->count());
+
+        $user = User::query()->where('email', 'existing@example.com')->firstOrFail();
+        $this->assertSame('New Name', $user->name);
+        $this->assertSame('https://new-avatar.test/img.png', $user->avatar);
+    }
+
+    #[Test]
+    public function callback_allows_admin_when_prevention_is_enabled(): void
+    {
+        config()->set('authx-auth.prevent_non_admin_user_creation', true);
+        config()->set('authx-auth.admin_emails', ['admin@example.com']);
+
+        $this->fakeSocialiteUser(
+            mapped: [
+                'id' => 12,
+                'name' => 'Admin',
+                'email' => 'admin@example.com',
+                'avatar' => null,
+            ],
+            raw: [],
+        );
+
+        $this->get('/auth/callback')->assertRedirect(route('dashboard'));
+        $this->assertAuthenticatedAs(User::query()->where('email', 'admin@example.com')->firstOrFail());
+    }
+
     /**
      * @param  array<string, mixed>  $mapped
      * @param  array<string, mixed>  $raw

@@ -43,6 +43,7 @@ abstract class TestCase extends Orchestra
         Schema::create('users', function (Blueprint $table): void {
             $table->id();
             $table->string('name')->nullable();
+            $table->string('nickname')->nullable();
             $table->string('email')->unique();
             $table->unsignedBigInteger('authx_id')->nullable();
             $table->string('google_id')->nullable();

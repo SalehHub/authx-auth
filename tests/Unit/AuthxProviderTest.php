@@ -79,6 +79,19 @@ class AuthxProviderTest extends TestCase
 
         $this->assertSame(['id' => 9, 'email' => 'api@example.com'], $payload);
     }
+
+    #[Test]
+    public function it_strips_trailing_slash_from_authx_url(): void
+    {
+        $provider = (new ExposedAuthxProvider(
+            Request::create('/'),
+            'client-id',
+            'secret',
+            'https://app.example.test/auth/callback'
+        ))->setAuthxUrl('https://authx.example.test/');
+
+        $this->assertSame('https://authx.example.test/oauth/token', $provider->exposedGetTokenUrl());
+    }
 }
 
 class ExposedAuthxProvider extends AuthxProvider
