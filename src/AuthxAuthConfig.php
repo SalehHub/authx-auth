@@ -48,25 +48,6 @@ class AuthxAuthConfig
         return (string) config('authx-auth.authx.url', 'http://localhost:8000');
     }
 
-    public function authxLogoutUrl(): string
-    {
-        $logoutUrl = config('authx-auth.authx.logout_url');
-
-        if (is_string($logoutUrl) && filled($logoutUrl)) {
-            return $logoutUrl;
-        }
-
-        return rtrim($this->authxUrl(), '/').'/logout';
-    }
-
-    public function logoutFromAuthx(): bool
-    {
-        return filter_var(
-            config('authx-auth.authx.logout_from_authx', true),
-            FILTER_VALIDATE_BOOL
-        );
-    }
-
     public function verifySsl(): bool
     {
         return filter_var(

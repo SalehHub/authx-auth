@@ -14,8 +14,6 @@ return [
         'client_secret' => env('AUTHX_CLIENT_SECRET'),
         'redirect' => env('AUTHX_REDIRECT_URI'),
         'url' => env('AUTHX_URL', 'http://localhost:8000'),
-        'logout_from_authx' => env('AUTHX_LOGOUT_FROM_AUTHX', true),
-        'logout_url' => env('AUTHX_LOGOUT_URL'),
         'verify_ssl' => env('AUTHX_VERIFY_SSL', true),
     ],
 ];

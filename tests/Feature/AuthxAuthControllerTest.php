@@ -180,40 +180,8 @@ class AuthxAuthControllerTest extends TestCase
     }
 
     #[Test]
-    public function logout_route_logs_out_and_redirects_to_authx_logout_url(): void
+    public function logout_route_logs_out_and_redirects_home(): void
     {
-        $user = User::query()->create([
-            'name' => 'Logout User',
-            'email' => 'logout@example.com',
-        ]);
-
-        $response = $this->actingAs($user)->post('/logout');
-
-        $response->assertRedirect('https://authx.example.test/logout');
-        $this->assertGuest();
-    }
-
-    #[Test]
-    public function logout_route_uses_configured_authx_logout_url_when_provided(): void
-    {
-        config()->set('authx-auth.authx.logout_url', 'https://authx.example.test/custom-logout');
-
-        $user = User::query()->create([
-            'name' => 'Logout User',
-            'email' => 'logout@example.com',
-        ]);
-
-        $response = $this->actingAs($user)->post('/logout');
-
-        $response->assertRedirect('https://authx.example.test/custom-logout');
-        $this->assertGuest();
-    }
-
-    #[Test]
-    public function logout_route_does_not_redirect_to_authx_when_disabled_in_config(): void
-    {
-        config()->set('authx-auth.authx.logout_from_authx', false);
-
         $user = User::query()->create([
             'name' => 'Logout User',
             'email' => 'logout@example.com',
