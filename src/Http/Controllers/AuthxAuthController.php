@@ -73,6 +73,11 @@ class AuthxAuthController
 
         if (Schema::hasColumn($table, 'email_verified_at')) {
             $authxEmailVerifiedAt = $rawUser['email_verified_at'] ?? null;
+            $authxEmailVerified = filter_var(
+                $rawUser['email_verified'] ?? null,
+                FILTER_VALIDATE_BOOL,
+                FILTER_NULL_ON_FAILURE
+            );
             $attributes['email_verified_at'] = null;
 
             if (is_string($authxEmailVerifiedAt) && trim($authxEmailVerifiedAt) !== '') {
@@ -81,6 +86,10 @@ class AuthxAuthController
                 } catch (\Throwable) {
                     $attributes['email_verified_at'] = null;
                 }
+            }
+
+            if ($attributes['email_verified_at'] === null && $authxEmailVerified === true) {
+                $attributes['email_verified_at'] = CarbonImmutable::now();
             }
         }
 
