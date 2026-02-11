@@ -16,6 +16,7 @@ class AuthxAuthServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(__DIR__.'/../config/authx-auth.php', 'authx-auth');
 
+        $this->app->singleton(AuthxAuthConfig::class, AuthxAuthConfig::class);
         $this->app->singleton(AdminEmailAllowlist::class, AdminEmailAllowlist::class);
     }
 
@@ -35,20 +36,21 @@ class AuthxAuthServiceProvider extends ServiceProvider
     protected function registerSocialiteDriver(): void
     {
         Socialite::extend('authx', function ($app): AuthxProvider {
-            $config = $app['config']->get('authx-auth.authx', []);
+            /** @var AuthxAuthConfig $config */
+            $config = $app->make(AuthxAuthConfig::class);
 
             /** @var array<string, mixed> $httpClientOptions */
             $httpClientOptions = [
-                'verify' => filter_var($config['verify_ssl'] ?? true, FILTER_VALIDATE_BOOL),
+                'verify' => $config->verifySsl(),
             ];
 
-            return new AuthxProvider(
+            return (new AuthxProvider(
                 $app['request'],
-                $config['client_id'],
-                $config['client_secret'],
-                $config['redirect'],
+                $config->clientId(),
+                $config->clientSecret(),
+                $config->redirectUri(),
                 $httpClientOptions,
-            );
+            ))->setAuthxUrl($config->authxUrl());
         });
     }
 

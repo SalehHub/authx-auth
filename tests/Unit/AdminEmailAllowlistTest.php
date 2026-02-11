@@ -3,6 +3,7 @@
 namespace AuthxAuth\Tests\Unit;
 
 use AuthxAuth\AdminEmailAllowlist;
+use AuthxAuth\AuthxAuthConfig;
 use AuthxAuth\Tests\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 
@@ -13,7 +14,7 @@ class AdminEmailAllowlistTest extends TestCase
     {
         config()->set('authx-auth.admin_emails', [' ADMIN@Example.com ', 'owner@example.com', 1, '']);
 
-        $allowlist = new AdminEmailAllowlist;
+        $allowlist = new AdminEmailAllowlist(new AuthxAuthConfig);
 
         $this->assertSame(['admin@example.com', 'owner@example.com'], $allowlist->emails());
         $this->assertTrue($allowlist->allows('ADMIN@example.com'));
@@ -24,7 +25,7 @@ class AdminEmailAllowlistTest extends TestCase
     {
         config()->set('authx-auth.admin_emails', 'admin@example.com');
 
-        $allowlist = new AdminEmailAllowlist;
+        $allowlist = new AdminEmailAllowlist(new AuthxAuthConfig);
 
         $this->assertSame([], $allowlist->emails());
         $this->assertFalse($allowlist->allows(null));

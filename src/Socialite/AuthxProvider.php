@@ -20,12 +20,24 @@ class AuthxProvider extends AbstractProvider
     protected $scopeSeparator = ' ';
 
     /**
+     * The base URL for the AuthX server.
+     */
+    protected string $authxUrl = '';
+
+    public function setAuthxUrl(string $url): static
+    {
+        $this->authxUrl = rtrim($url, '/');
+
+        return $this;
+    }
+
+    /**
      * Get the authentication URL for the provider.
      */
     protected function getAuthUrl($state): string
     {
         return $this->buildAuthUrlFromBase(
-            config('authx-auth.authx.url').'/oauth/authorize',
+            $this->authxUrl.'/oauth/authorize',
             $state,
         );
     }
@@ -35,7 +47,7 @@ class AuthxProvider extends AbstractProvider
      */
     protected function getTokenUrl(): string
     {
-        return config('authx-auth.authx.url').'/oauth/token';
+        return $this->authxUrl.'/oauth/token';
     }
 
     /**
@@ -46,7 +58,7 @@ class AuthxProvider extends AbstractProvider
     protected function getUserByToken($token): array
     {
         $response = $this->getHttpClient()->get(
-            config('authx-auth.authx.url').'/api/user',
+            $this->authxUrl.'/api/user',
             [
                 'headers' => [
                     'Authorization' => 'Bearer '.$token,

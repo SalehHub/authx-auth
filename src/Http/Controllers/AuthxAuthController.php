@@ -3,6 +3,7 @@
 namespace AuthxAuth\Http\Controllers;
 
 use AuthxAuth\AdminEmailAllowlist;
+use AuthxAuth\AuthxAuthConfig;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
@@ -15,6 +16,7 @@ class AuthxAuthController
 {
     public function __construct(
         protected AdminEmailAllowlist $adminEmailAllowlist,
+        protected AuthxAuthConfig $config,
     ) {}
 
     /**
@@ -43,16 +45,12 @@ class AuthxAuthController
         $name = $authxUser->getName();
         $id = $authxUser->getId();
         $avatar = $authxUser->getAvatar();
-        $preventNonAdminUserCreation = filter_var(
-            config('authx-auth.prevent_non_admin_user_creation', false),
-            FILTER_VALIDATE_BOOL
-        );
 
-        if ($preventNonAdminUserCreation && ! $this->adminEmailAllowlist->allows($email)) {
+        if ($this->config->preventNonAdminUserCreation() && ! $this->adminEmailAllowlist->allows($email)) {
             abort(403, 'Only admin users can access this application.');
         }
 
-        $userModelClass = (string) config('auth.providers.users.model');
+        $userModelClass = $this->config->userModel();
 
         abort_unless(class_exists($userModelClass), 500, 'The users auth provider model is not configured correctly.');
 
@@ -87,12 +85,10 @@ class AuthxAuthController
         $user->forceFill(array_merge(['email' => $email], $attributes));
         $user->save();
 
-        Auth::guard('web')->login($user, remember: true);
+        Auth::guard('web')->login($user, remember: $this->config->rememberUser());
         $request->session()->regenerate();
 
-        $postLoginRedirectRoute = (string) config('authx-auth.post_login_redirect_route', 'dashboard');
-
-        return redirect()->intended(route($postLoginRedirectRoute));
+        return redirect()->intended(route($this->config->postLoginRedirectRoute()));
     }
 
     /**

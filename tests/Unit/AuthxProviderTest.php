@@ -17,12 +17,12 @@ class AuthxProviderTest extends TestCase
     #[Test]
     public function it_builds_expected_auth_and_token_urls(): void
     {
-        $provider = new ExposedAuthxProvider(
+        $provider = (new ExposedAuthxProvider(
             Request::create('/'),
             'client-id',
             'secret',
             'https://app.example.test/auth/callback'
-        );
+        ))->setAuthxUrl('https://authx.example.test');
 
         $authUrl = $provider->exposedGetAuthUrl('state-123');
 
@@ -36,12 +36,12 @@ class AuthxProviderTest extends TestCase
     #[Test]
     public function it_maps_authx_user_payload_to_socialite_user(): void
     {
-        $provider = new ExposedAuthxProvider(
+        $provider = (new ExposedAuthxProvider(
             Request::create('/'),
             'client-id',
             'secret',
             'https://app.example.test/auth/callback'
-        );
+        ))->setAuthxUrl('https://authx.example.test');
 
         $user = $provider->exposedMapUserToObject([
             'id' => 5,
@@ -60,12 +60,12 @@ class AuthxProviderTest extends TestCase
     #[Test]
     public function it_fetches_user_payload_from_authx_api(): void
     {
-        $provider = new ExposedAuthxProvider(
+        $provider = (new ExposedAuthxProvider(
             Request::create('/'),
             'client-id',
             'secret',
             'https://app.example.test/auth/callback'
-        );
+        ))->setAuthxUrl('https://authx.example.test');
 
         $mock = new MockHandler([
             new Response(200, [], json_encode(['id' => 9, 'email' => 'api@example.com'], JSON_THROW_ON_ERROR)),

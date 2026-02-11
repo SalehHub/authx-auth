@@ -4,16 +4,16 @@ namespace AuthxAuth;
 
 class AdminEmailAllowlist
 {
+    public function __construct(
+        protected AuthxAuthConfig $config,
+    ) {}
+
     /**
      * @return list<string>
      */
     public function emails(): array
     {
-        $emails = config('authx-auth.admin_emails', []);
-
-        if (! is_array($emails)) {
-            return [];
-        }
+        $emails = $this->config->adminEmails();
 
         $normalizedEmails = [];
 
