@@ -62,22 +62,23 @@ class AuthxAuthController
         ];
 
         $table = (new $userModelClass)->getTable();
+        $columns = Schema::getColumnListing($table);
         /** @var Model|null $existingUser */
         $existingUser = $userModelClass::query()->where('email', $email)->first();
 
-        if (Schema::hasColumn($table, 'authx_id')) {
+        if (in_array('authx_id', $columns, true)) {
             $attributes['authx_id'] = is_numeric($id) ? (int) $id : null;
         }
 
-        if (Schema::hasColumn($table, 'avatar')) {
+        if (in_array('avatar', $columns, true)) {
             $attributes['avatar'] = is_string($avatar) ? $avatar : '';
         }
 
-        if (Schema::hasColumn($table, 'email_verified_at')) {
+        if (in_array('email_verified_at', $columns, true)) {
             $attributes['email_verified_at'] = $this->resolveEmailVerifiedAt($rawUser);
         }
 
-        if (Schema::hasColumn($table, 'auth_provider')) {
+        if (in_array('auth_provider', $columns, true)) {
             $attributes['auth_provider'] = $this->resolveAuthProvider($rawUser, $existingUser);
         }
 
