@@ -63,7 +63,7 @@ class AuthxAuthControllerTest extends TestCase
 
         $user = User::query()->where('email', 'admin@example.com')->firstOrFail();
 
-        $this->assertSame('admin@example.com', $user->name);
+        $this->assertSame('admin', $user->name);
         $this->assertSame(17, $user->authx_id);
         $this->assertSame('authx', $user->auth_provider);
         $this->assertSame('https://cdn.example.test/avatar.png', $user->avatar);

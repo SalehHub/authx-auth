@@ -10,7 +10,9 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
+use Throwable;
 
 class AuthxAuthController
 {
@@ -40,7 +42,7 @@ class AuthxAuthController
 
         $email = $authxUser->getEmail();
 
-        abort_unless(is_string($email) && $email !== '', 422, 'AuthX did not return a valid email address.');
+        abort_unless(filled($email), 422, 'AuthX did not return a valid email address.');
 
         $name = $authxUser->getName();
         $id = $authxUser->getId();
@@ -50,19 +52,22 @@ class AuthxAuthController
             abort(403, 'Only admin users can access this application.');
         }
 
+        /** @var class-string<Model> $userModelClass */
         $userModelClass = $this->config->userModel();
 
         abort_unless(class_exists($userModelClass), 500, 'The users auth provider model is not configured correctly.');
 
-        /** @var class-string<Model> $userModelClass */
-        $attributes = [
-            'name' => is_string($name) && $name !== '' ? $name : $email,
-        ];
+
 
         $table = (new $userModelClass)->getTable();
         $columns = Schema::getColumnListing($table);
+
         /** @var Model|null $existingUser */
         $existingUser = $userModelClass::query()->where('email', $email)->first();
+
+        $attributes = [
+            'name' => filled($name) ? $name : Str::before($email, '@'),
+        ];
 
         if (in_array('authx_id', $columns, true)) {
             $attributes['authx_id'] = is_numeric($id) ? (int) $id : null;
@@ -116,10 +121,10 @@ class AuthxAuthController
             FILTER_NULL_ON_FAILURE
         );
 
-        if (is_string($authxEmailVerifiedAt) && trim($authxEmailVerifiedAt) !== '') {
+        if (filled($authxEmailVerifiedAt)) {
             try {
                 return CarbonImmutable::parse($authxEmailVerifiedAt);
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 // Ignore invalid timestamps and fallback to email_verified.
             }
         }
@@ -138,7 +143,7 @@ class AuthxAuthController
     {
         $providerFromPayload = $rawUser['auth_provider'] ?? null;
 
-        if (is_string($providerFromPayload) && trim($providerFromPayload) !== '') {
+        if (filled($providerFromPayload)) {
             return mb_strtolower(trim($providerFromPayload));
         }
 
