@@ -72,25 +72,7 @@ class AuthxAuthController
         }
 
         if (Schema::hasColumn($table, 'email_verified_at')) {
-            $authxEmailVerifiedAt = $rawUser['email_verified_at'] ?? null;
-            $authxEmailVerified = filter_var(
-                $rawUser['email_verified'] ?? null,
-                FILTER_VALIDATE_BOOL,
-                FILTER_NULL_ON_FAILURE
-            );
-            $attributes['email_verified_at'] = null;
-
-            if (is_string($authxEmailVerifiedAt) && trim($authxEmailVerifiedAt) !== '') {
-                try {
-                    $attributes['email_verified_at'] = CarbonImmutable::parse($authxEmailVerifiedAt);
-                } catch (\Throwable) {
-                    $attributes['email_verified_at'] = null;
-                }
-            }
-
-            if ($attributes['email_verified_at'] === null && $authxEmailVerified === true) {
-                $attributes['email_verified_at'] = CarbonImmutable::now();
-            }
+            $attributes['email_verified_at'] = $this->resolveEmailVerifiedAt($rawUser);
         }
 
         /** @var Model $user */
@@ -118,5 +100,32 @@ class AuthxAuthController
         $request->session()->regenerateToken();
 
         return redirect('/');
+    }
+
+    /**
+     * @param  array<string, mixed>  $rawUser
+     */
+    protected function resolveEmailVerifiedAt(array $rawUser): ?CarbonImmutable
+    {
+        $authxEmailVerifiedAt = $rawUser['email_verified_at'] ?? null;
+        $authxEmailVerified = filter_var(
+            $rawUser['email_verified'] ?? null,
+            FILTER_VALIDATE_BOOL,
+            FILTER_NULL_ON_FAILURE
+        );
+
+        if (is_string($authxEmailVerifiedAt) && trim($authxEmailVerifiedAt) !== '') {
+            try {
+                return CarbonImmutable::parse($authxEmailVerifiedAt);
+            } catch (\Throwable) {
+                // Ignore invalid timestamps and fallback to email_verified.
+            }
+        }
+
+        if ($authxEmailVerified === true) {
+            return CarbonImmutable::now();
+        }
+
+        return null;
     }
 }

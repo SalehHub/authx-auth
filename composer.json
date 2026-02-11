@@ -12,10 +12,21 @@
         "illuminate/contracts": "^12.0",
         "laravel/socialite": "^5.24"
     },
+    "require-dev": {
+        "phpunit/phpunit": "^11.5"
+    },
     "autoload": {
         "psr-4": {
             "AuthxAuth\\": "src/"
         }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "AuthxAuth\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit"
     },
     "extra": {
         "laravel": {
