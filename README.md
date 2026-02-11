@@ -60,8 +60,6 @@ The package loads these web routes:
 - `GET /auth/callback` -> handles OAuth callback, logs in/upserts user
 - `POST /logout` -> logs user out locally and optionally redirects to AuthX logout URL
 
-For Inertia requests (`X-Inertia`), external redirects are returned as `409` with `X-Inertia-Location` so the client performs a full-page navigation instead of an XHR cross-origin request.
-
 ### Middleware Alias
 
 - `admin` -> `AuthxAuth\Http\Middleware\EnsureUserIsAdmin`
