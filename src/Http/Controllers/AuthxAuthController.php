@@ -62,6 +62,8 @@ class AuthxAuthController
         ];
 
         $table = (new $userModelClass)->getTable();
+        /** @var Model|null $existingUser */
+        $existingUser = $userModelClass::query()->where('email', $email)->first();
 
         if (Schema::hasColumn($table, 'authx_id')) {
             $attributes['authx_id'] = is_numeric($id) ? (int) $id : null;
@@ -75,11 +77,14 @@ class AuthxAuthController
             $attributes['email_verified_at'] = $this->resolveEmailVerifiedAt($rawUser);
         }
 
+        if (Schema::hasColumn($table, 'auth_provider')) {
+            $attributes['auth_provider'] = $this->resolveAuthProvider($rawUser, $existingUser);
+        }
+
         /** @var Model $user */
-        $user = $userModelClass::query()->updateOrCreate(
-            ['email' => $email],
-            $attributes,
-        );
+        $user = $existingUser ?? new $userModelClass;
+        $user->forceFill(array_merge(['email' => $email], $attributes));
+        $user->save();
 
         Auth::guard('web')->login($user, remember: true);
         $request->session()->regenerate();
@@ -127,5 +132,38 @@ class AuthxAuthController
         }
 
         return null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $rawUser
+     */
+    protected function resolveAuthProvider(array $rawUser, ?Model $existingUser = null): string
+    {
+        $providerFromPayload = $rawUser['auth_provider'] ?? null;
+
+        if (is_string($providerFromPayload) && trim($providerFromPayload) !== '') {
+            return mb_strtolower(trim($providerFromPayload));
+        }
+
+        if ($this->hasExternalProviderId('google', $rawUser, $existingUser)) {
+            return 'google';
+        }
+
+        return 'authx';
+    }
+
+    /**
+     * @param  array<string, mixed>  $rawUser
+     */
+    protected function hasExternalProviderId(string $provider, array $rawUser, ?Model $existingUser): bool
+    {
+        $column = $provider.'_id';
+        $rawValue = $rawUser[$column] ?? null;
+        $existingValue = $existingUser?->getAttribute($column);
+
+        return (is_string($rawValue) && trim($rawValue) !== '')
+            || is_numeric($rawValue)
+            || (is_string($existingValue) && trim($existingValue) !== '')
+            || is_numeric($existingValue);
     }
 }

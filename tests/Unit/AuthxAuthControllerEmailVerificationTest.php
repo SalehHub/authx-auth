@@ -5,6 +5,7 @@ namespace AuthxAuth\Tests\Unit;
 use AuthxAuth\AdminEmailAllowlist;
 use AuthxAuth\Http\Controllers\AuthxAuthController;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Model;
 use PHPUnit\Framework\Attributes\After;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -71,6 +72,52 @@ class AuthxAuthControllerEmailVerificationTest extends TestCase
         $this->assertInstanceOf(CarbonImmutable::class, $verifiedAt);
         $this->assertSame('2026-02-11 19:00:00', $verifiedAt?->utc()->toDateTimeString());
     }
+
+    #[Test]
+    public function it_prefers_auth_provider_from_payload(): void
+    {
+        $controller = new TestableAuthxAuthController(new AdminEmailAllowlist);
+
+        $provider = $controller->exposedResolveAuthProvider([
+            'auth_provider' => 'GOOGLE',
+        ]);
+
+        $this->assertSame('google', $provider);
+    }
+
+    #[Test]
+    public function it_inferrs_google_auth_provider_from_google_id(): void
+    {
+        $controller = new TestableAuthxAuthController(new AdminEmailAllowlist);
+
+        $provider = $controller->exposedResolveAuthProvider([
+            'google_id' => 'google-55',
+        ]);
+
+        $this->assertSame('google', $provider);
+    }
+
+    #[Test]
+    public function it_inferrs_google_auth_provider_from_existing_user_google_id(): void
+    {
+        $controller = new TestableAuthxAuthController(new AdminEmailAllowlist);
+        $existingUser = new UserWithAttributes;
+        $existingUser->setAttribute('google_id', 'google-77');
+
+        $provider = $controller->exposedResolveAuthProvider([], $existingUser);
+
+        $this->assertSame('google', $provider);
+    }
+
+    #[Test]
+    public function it_defaults_auth_provider_to_authx(): void
+    {
+        $controller = new TestableAuthxAuthController(new AdminEmailAllowlist);
+
+        $provider = $controller->exposedResolveAuthProvider([]);
+
+        $this->assertSame('authx', $provider);
+    }
 }
 
 class TestableAuthxAuthController extends AuthxAuthController
@@ -82,4 +129,17 @@ class TestableAuthxAuthController extends AuthxAuthController
     {
         return $this->resolveEmailVerifiedAt($rawUser);
     }
+
+    /**
+     * @param  array<string, mixed>  $rawUser
+     */
+    public function exposedResolveAuthProvider(array $rawUser, ?Model $existingUser = null): string
+    {
+        return $this->resolveAuthProvider($rawUser, $existingUser);
+    }
+}
+
+class UserWithAttributes extends Model
+{
+    protected $guarded = [];
 }

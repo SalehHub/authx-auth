@@ -81,6 +81,9 @@ It conditionally sets these fields only if the user table has matching columns:
 - `authx_id`
 - `avatar`
 - `email_verified_at` (from AuthX `/api/user.email_verified_at`; if absent, `/api/user.email_verified=true` sets it to current time; otherwise stored as `null`)
+- `auth_provider` (uses AuthX `auth_provider`; infers `google` when `google_id` exists; otherwise `authx`)
+
+Attributes are saved with `forceFill()`, so they are persisted even when not listed in your model `$fillable` array.
 
 If you want these values persisted, add nullable columns:
 

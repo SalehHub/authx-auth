@@ -2,6 +2,7 @@
 
 namespace AuthxAuth\Tests\Feature;
 
+use AuthxAuth\Tests\Fixtures\RestrictedUser;
 use AuthxAuth\Tests\Fixtures\User;
 use AuthxAuth\Tests\TestCase;
 use Carbon\CarbonImmutable;
@@ -64,6 +65,7 @@ class AuthxAuthControllerTest extends TestCase
 
         $this->assertSame('admin@example.com', $user->name);
         $this->assertSame(17, $user->authx_id);
+        $this->assertSame('authx', $user->auth_provider);
         $this->assertSame('https://cdn.example.test/avatar.png', $user->avatar);
         $this->assertSame(
             '2026-02-10 01:02:03',
@@ -92,8 +94,38 @@ class AuthxAuthControllerTest extends TestCase
         $this->get('/auth/callback')->assertRedirect(route('dashboard'));
 
         $user = User::query()->where('email', 'jane@example.com')->firstOrFail();
+        $this->assertSame('authx', $user->auth_provider);
         $this->assertSame(
             '2026-02-11 16:30:00',
+            CarbonImmutable::parse((string) $user->email_verified_at)->utc()->toDateTimeString()
+        );
+    }
+
+    #[Test]
+    public function callback_updates_non_fillable_attributes_on_restricted_user_model(): void
+    {
+        config()->set('auth.providers.users.model', RestrictedUser::class);
+
+        $this->fakeSocialiteUser(
+            mapped: [
+                'id' => '33',
+                'name' => 'Restricted',
+                'email' => 'restricted@example.com',
+                'avatar' => null,
+            ],
+            raw: [
+                'email_verified_at' => '2026-02-10T08:00:00Z',
+                'google_id' => 'google-123',
+            ],
+        );
+
+        $this->get('/auth/callback')->assertRedirect(route('dashboard'));
+
+        $user = RestrictedUser::query()->where('email', 'restricted@example.com')->firstOrFail();
+        $this->assertSame(33, $user->authx_id);
+        $this->assertSame('google', $user->auth_provider);
+        $this->assertSame(
+            '2026-02-10 08:00:00',
             CarbonImmutable::parse((string) $user->email_verified_at)->utc()->toDateTimeString()
         );
     }

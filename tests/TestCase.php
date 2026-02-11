@@ -45,6 +45,8 @@ abstract class TestCase extends Orchestra
             $table->string('name')->nullable();
             $table->string('email')->unique();
             $table->unsignedBigInteger('authx_id')->nullable();
+            $table->string('google_id')->nullable();
+            $table->string('auth_provider')->default('local');
             $table->string('avatar')->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->rememberToken();
